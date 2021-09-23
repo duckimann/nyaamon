@@ -22,9 +22,8 @@ const files = {
 
 function getTorrent() {
 	File.getKeywords()
-		.reduce((cp, item) => cp.then((resArr) => new Promise((resolve) => {
-			let url = `https://nyaa.si/?page=rss&q=${encodeURIComponent(item.key)}&c=${item.type}&f=${item.trusted}`,
-				hashes = File.getHashes();
+		.reduce((cp, item) => cp.then((tfound) => new Promise((resolve) => {
+			let url = `https://nyaa.si/?page=rss&q=${encodeURIComponent(item.key)}&c=${item.type}&f=${item.trusted}`;
 			File.writeLog(`Fetching ${url}`);
 			request(url, function(err, res, body) {
 				let item = new JSDOM(body, {contentType: "application/xml"}).window.document.querySelectorAll("item"),
@@ -36,30 +35,30 @@ function getTorrent() {
 						hash: b.children[7].innerHTML,
 						size: b.children[10].innerHTML,
 					}));
-				setTimeout(() => {
-					for (let torr of details) {
-						let exists = !hashes.includes(torr.hash);
-						File.writeLog(`${exists} | ${torr.hash} | ${torr.title}`);
-						if (exists) resArr.push(torr);
-					}
-					resolve(resArr);
-				}, 5000);
+				tfound = [...tfound, ...details];
+				resolve(tfound);
 			});
 		})), Promise.resolve([]))
-		.then((torrents) => {
-			File.writeLog(`Found ${torrents.length} torrent(s).`);
-			return torrents.reduce((cp, torrent) => cp.then(() => new Promise((resolve) => {
-				File.writeHashes(torrent.hash);
-				request(torrent.link)
-					.pipe(fs.createWriteStream(`${__dirname}/torrents/${torrent.link.match(/[^\\\/]*$/g)[0]}`))
-					.on("close", () => {
-						setTimeout(() => {
-							resolve();
-						}, 2000);
-					});
-			})), Promise.resolve());
+		.then((tfound) => {
+			File.writeLog(`Found ${tfound.length} torrent(s).`);
+			return tfound.reduce((cp, torrent) => cp.then((dlNum) => new Promise((resolve) => {
+				let hashes = File.getHashes(),
+					exists = hashes.includes(torrent.hash);
+				if (!exists) {
+					File.writeHashes(torrent.hash);
+					request(torrent.link)
+						.pipe(fs.createWriteStream(`${__dirname}/torrents/${torrent.link.match(/[^\\\/]*$/g)[0]}`))
+						.on("close", () => {
+							File.writeLog(`Downloaded torrent #${torrent.hash}`);
+							resolve(++dlNum)
+						});
+				} else {
+					File.writeLog(`#${torrent.hash} is in db. Forwarding.`);
+					resolve(dlNum);
+				}
+			})), Promise.resolve(0));
 		})
-		.finally(() => File.writeLog("Done.\n"));
+		.then((dlNum) => File.writeLog(`Downloaded ${dlNum} torrent(s).\n`));
 }
 
 getTorrent();
