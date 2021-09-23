@@ -1,0 +1,9 @@
+version: "3.8"
+services: 
+  nyaamon:
+    container_name: nyaamon
+    image: nyaamon
+    volumes: 
+      - ./torrents:/usr/nyaamon/torrents
+      - ./txt:/usr/nyaamon/txt
+    restart: unless-stopped
