@@ -1,4 +1,4 @@
-FROM node:latest
+FROM node:16-bullseye-slim
 
 WORKDIR /usr/nyaamon
 
