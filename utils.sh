@@ -10,7 +10,7 @@ case $1 in
 		docker compose down; docker rmi nyaamon;
 		docker build -t nyaamon .;
 		docker compose up -d;
-		docker logs --tail 50 --follow --timestamps nyaamon;
+		docker logs --tail 50 --follow --timestamps nyaamon || docker compose down;
 		;;
 
 	*)
