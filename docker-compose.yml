@@ -4,6 +4,6 @@ services:
     container_name: nyaamon
     image: nyaamon
     volumes: 
-      - ./torrents:/usr/nyaamon/torrents
-      - ./txt:/usr/nyaamon/txt
+      - ./torrents:/nyaamon/torrents
+      - ./txt:/nyaamon/txt
     restart: unless-stopped
